@@ -31,13 +31,13 @@ export function Hero({ onGetStarted }: HeroProps) {
             >
               Get Started Free
             </Button>
-            <Button
+            {/* <Button
               size="lg"
               variant="outline"
               className="border-white text-white hover:bg-white/10"
             >
               View Demo
-            </Button>
+            </Button> */}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 max-w-4xl mx-auto">
