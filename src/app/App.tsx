@@ -16,13 +16,13 @@ function DashboardLayout() {
   const location = useLocation();
 
   const navItems = [
-    { id: "career", label: "Career AI", icon: Sparkles, path: "career" },
-    { id: "govt", label: "Govt Jobs", icon: Building2, path: "govt" },
-    { id: "placement", label: "Placement", icon: Target, path: "placement" },
-    { id: "startup", label: "Startup", icon: Rocket, path: "startup" },
-    { id: "resume", label: "Resume", icon: FileText, path: "resume" },
-    { id: "interview", label: "Interview", icon: MessageSquare, path: "interview" },
-    { id: "progress", label: "Progress", icon: TrendingUp, path: "progress" },
+    { id: "career", label: "Career AI", icon: Sparkles, path: "/dashboard/career" },
+    { id: "govt", label: "Govt Jobs", icon: Building2, path: "/dashboard/govt" },
+    { id: "placement", label: "Placement", icon: Target, path: "/dashboard/placement" },
+    { id: "startup", label: "Startup", icon: Rocket, path: "/dashboard/startup" },
+    { id: "resume", label: "Resume", icon: FileText, path: "/dashboard/resume" },
+    { id: "interview", label: "Interview", icon: MessageSquare, path: "/dashboard/interview" },
+    { id: "progress", label: "Progress", icon: TrendingUp, path: "/dashboard/progress" },
     { id: "home", label: "Home", icon: Home, path: "/" },
   ];
 
@@ -73,14 +73,6 @@ function DashboardLayout() {
           </div>
 
           <div className="mt-6">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={location.pathname}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.2 }}
-              >
                 <Routes>
                   <Route path="career" element={<CareerRecommendation />} />
                   <Route path="govt" element={<GovernmentJobs />} />
@@ -91,8 +83,6 @@ function DashboardLayout() {
                   <Route path="progress" element={<ProgressTracker />} />
                   <Route path="*" element={<Navigate to="career" replace />} />
                 </Routes>
-              </motion.div>
-            </AnimatePresence>
           </div>
         </div>
       </main>
