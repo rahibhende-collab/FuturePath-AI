@@ -9,6 +9,7 @@ import { StartupIdeas } from "./components/StartupIdeas";
 import { ResumeBuilder } from "./components/ResumeBuilder";
 import { MockInterview } from "./components/MockInterview";
 import { ProgressTracker } from "./components/ProgressTracker";
+
 import { Sparkles, Building2, Target, Rocket, FileText, MessageSquare, TrendingUp, Home, Loader2 } from "lucide-react";
 import { AuthProvider, useAuth } from "./components/AuthContext";
 import { Login } from "./components/Login";
@@ -16,7 +17,7 @@ import { Register } from "./components/Register";
 import { Toaster } from "sonner";
 import { Button } from "./components/ui/button";
 
-function DashboardLayout() {
+function DashboardLayout()  {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuth();
@@ -76,10 +77,9 @@ function DashboardLayout() {
                     key={item.id}
                     to={item.path}
                     className={({ isActive }) =>
-                      `flex items-center gap-2 px-4 py-2 rounded-md transition-colors ${
-                        isActive
-                          ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 font-medium"
-                          : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
+                      `flex items-center gap-2 px-4 py-2 rounded-md transition-colors ${isActive
+                        ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 font-medium"
+                        : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
                       }`
                     }
                   >
@@ -92,16 +92,16 @@ function DashboardLayout() {
           </div>
 
           <div className="mt-6">
-                <Routes>
-                  <Route path="career" element={<CareerRecommendation />} />
-                  <Route path="govt" element={<GovernmentJobs />} />
-                  <Route path="placement" element={<PlacementPrep />} />
-                  <Route path="startup" element={<StartupIdeas />} />
-                  <Route path="resume" element={<ResumeBuilder />} />
-                  <Route path="interview" element={<MockInterview />} />
-                  <Route path="progress" element={<ProgressTracker />} />
-                  <Route path="*" element={<Navigate to="career" replace />} />
-                </Routes>
+            <Routes>
+              <Route path="career" element={<CareerRecommendation />} />
+              <Route path="govt" element={<GovernmentJobs />} />
+              <Route path="placement" element={<PlacementPrep />} />
+              <Route path="startup" element={<StartupIdeas />} />
+              <Route path="resume" element={<ResumeBuilder />} />
+              <Route path="interview" element={<MockInterview />} />
+              <Route path="progress" element={<ProgressTracker />} />
+              <Route path="*" element={<Navigate to="career" replace />} />
+            </Routes>
           </div>
         </div>
       </main>
