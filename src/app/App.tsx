@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate, NavLink, useNavigate, useLocation } from "react-router";
+import { Routes, Route, Navigate, NavLink, useNavigate, useLocation, Outlet } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
 import { ThemeToggle } from "./components/ThemeToggle";
 import { Hero } from "./components/Hero";
@@ -9,11 +9,17 @@ import { StartupIdeas } from "./components/StartupIdeas";
 import { ResumeBuilder } from "./components/ResumeBuilder";
 import { MockInterview } from "./components/MockInterview";
 import { ProgressTracker } from "./components/ProgressTracker";
-import { Sparkles, Building2, Target, Rocket, FileText, MessageSquare, TrendingUp, Home } from "lucide-react";
+import { Sparkles, Building2, Target, Rocket, FileText, MessageSquare, TrendingUp, Home, Loader2 } from "lucide-react";
+import { AuthProvider, useAuth } from "./components/AuthContext";
+import { Login } from "./components/Login";
+import { Register } from "./components/Register";
+import { Toaster } from "sonner";
+import { Button } from "./components/ui/button";
 
 function DashboardLayout() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user, logout } = useAuth();
 
   const navItems = [
     { id: "career", label: "Career AI", icon: Sparkles, path: "/dashboard/career" },
@@ -37,10 +43,23 @@ function DashboardLayout() {
             </div>
             <div className="flex items-center gap-4">
               <ThemeToggle />
-              <span className="text-sm text-gray-600 dark:text-gray-300">Welcome, Student</span>
-              <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold">
-                S
-              </div>
+              {user ? (
+                <>
+                  <span className="text-sm text-gray-600 dark:text-gray-300 hidden sm:inline">Welcome, {user.name}</span>
+                  <button
+                    onClick={logout}
+                    className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold hover:bg-blue-700 transition-colors"
+                    title="Click to Logout"
+                  >
+                    {user.name.charAt(0).toUpperCase()}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <span className="text-sm text-gray-600 dark:text-gray-300">Welcome, Guest</span>
+                  <Button size="sm" onClick={() => navigate("/login")}>Login</Button>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -136,13 +155,34 @@ function DashboardLayout() {
   );
 }
 
+function ProtectedRoute() {
+  const { token, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-[#0a0a0a] flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+      </div>
+    );
+  }
+
+  return token ? <Outlet /> : <Navigate to="/login" replace />;
+}
+
 export default function App() {
   const navigate = useNavigate();
   return (
-    <Routes>
-      <Route path="/" element={<Hero onGetStarted={() => navigate("/dashboard")} />} />
-      <Route path="/dashboard/*" element={<DashboardLayout />} />
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    <AuthProvider>
+      <Toaster position="top-right" richColors />
+      <Routes>
+        <Route path="/" element={<Hero onGetStarted={() => navigate("/dashboard")} />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route element={<ProtectedRoute />}>
+          <Route path="/dashboard/*" element={<DashboardLayout />} />
+        </Route>
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </AuthProvider>
   );
 }

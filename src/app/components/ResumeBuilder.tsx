@@ -4,257 +4,326 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Textarea } from "./ui/textarea";
-import { FileText, Download, Check, Star } from "lucide-react";
+import { FileText, Upload, Check, Star, AlertCircle, Sparkles, Loader2, RefreshCw } from "lucide-react";
 import { Badge } from "./ui/badge";
 import { Progress } from "./ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
+import { useAuth } from "./AuthContext";
+import { toast } from "sonner";
 
 export function ResumeBuilder() {
-  const [resumeScore, setResumeScore] = useState(0);
-  const [showScore, setShowScore] = useState(false);
+  const { fetchWithAuth } = useAuth();
+  
+  // Builder form states
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    linkedin: "",
+    degree: "",
+    college: "",
+    year: "",
+    cgpa: "",
+    skills: "",
+    projectTitle: "",
+    projectDesc: "",
+    company: "",
+    role: "",
+    duration: "",
+    responsibilities: ""
+  });
 
-  const handleAnalyze = () => {
-    setResumeScore(78);
-    setShowScore(true);
+  // Analyzer states
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [analysisResult, setAnalysisResult] = useState<any | null>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      if (file.type !== "application/pdf") {
+        toast.error("Please upload a PDF file only.");
+        return;
+      }
+      setPdfFile(file);
+    }
   };
 
-  const improvements = [
-    { text: "Add quantifiable achievements", done: false },
-    { text: "Include relevant technical skills", done: true },
-    { text: "Use action verbs in descriptions", done: true },
-    { text: "Add GitHub/Portfolio links", done: false },
-    { text: "Keep it to 1-2 pages", done: true },
-    { text: "Include certifications", done: false }
-  ];
+  const handleAnalyzeResume = async () => {
+    if (!pdfFile) {
+      toast.warning("Please choose a PDF resume file to analyze.");
+      return;
+    }
+
+    setAnalyzing(true);
+    setAnalysisResult(null);
+
+    const bodyData = new FormData();
+    bodyData.append("resume", pdfFile);
+
+    try {
+      const response = await fetchWithAuth("/ai/resume", {
+        method: "POST",
+        body: bodyData,
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        setAnalysisResult(data);
+        toast.success("Resume analysis completed!");
+      } else {
+        toast.error(data.message || "Failed to analyze resume");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Network error while uploading resume");
+    } finally {
+      setAnalyzing(false);
+    }
+  };
+
+  const handleDownloadMockPDF = () => {
+    toast.success("PDF generated and download started (mock)!");
+  };
 
   return (
     <div className="space-y-6">
       <div className="text-center mb-8">
         <div className="flex items-center justify-center gap-2 mb-2">
-          <FileText className="w-6 h-6 text-blue-600" />
-          <h2 className="text-3xl font-bold">Smart Resume Builder</h2>
+          <FileText className="w-6 h-6 text-blue-600 animate-pulse" />
+          <h2 className="text-3xl font-bold">Resume Hub</h2>
         </div>
-        <p className="text-gray-600">Create ATS-friendly resumes that get you noticed</p>
+        <p className="text-gray-600 dark:text-gray-400 font-medium">Build an ATS-optimized resume or evaluate your current one using AI</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="md:col-span-2 space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Personal Information</CardTitle>
-              <CardDescription>Your basic details</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="name">Full Name</Label>
-                  <Input id="name" placeholder="Your Name" />
-                </div>
-                <div>
-                  <Label htmlFor="email">Email</Label>
-                  <Input id="email" type="email" placeholder="your.email@example.com" />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="phone">Phone</Label>
-                  <Input id="phone" placeholder="+91 XXXXX XXXXX" />
-                </div>
-                <div>
-                  <Label htmlFor="linkedin">LinkedIn</Label>
-                  <Input id="linkedin" placeholder="linkedin.com/in/yourprofile" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+      <Tabs defaultValue="analyzer" className="w-full">
+        <TabsList className="grid grid-cols-2 w-full max-w-md mx-auto mb-6">
+          <TabsTrigger value="analyzer">AI Resume Analyzer</TabsTrigger>
+          <TabsTrigger value="builder">Smart Resume Builder</TabsTrigger>
+        </TabsList>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Education</CardTitle>
-              <CardDescription>Your academic background</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="degree">Degree</Label>
-                <Input id="degree" placeholder="e.g., MCA, B.Tech (Computer Science)" />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="college">College/University</Label>
-                  <Input id="college" placeholder="Your Institution" />
-                </div>
-                <div>
-                  <Label htmlFor="year">Graduation Year</Label>
-                  <Input id="year" placeholder="2026" />
-                </div>
-              </div>
-              <div>
-                <Label htmlFor="cgpa">CGPA/Percentage</Label>
-                <Input id="cgpa" placeholder="8.5 CGPA or 85%" />
-              </div>
-            </CardContent>
-          </Card>
+        {/* ANALYZER TAB */}
+        <TabsContent value="analyzer" className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="md:col-span-2 space-y-4">
+              <Card className="bg-white dark:bg-[#111] border dark:border-gray-800">
+                <CardHeader>
+                  <CardTitle>ATS PDF Analyzer</CardTitle>
+                  <CardDescription>Upload your current PDF resume to run a mock ATS scan and receive detailed optimization tips.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="border-2 border-dashed border-gray-300 dark:border-gray-850 rounded-lg p-8 text-center bg-gray-50 dark:bg-gray-950/20 hover:bg-gray-100 dark:hover:bg-gray-950/30 transition-colors">
+                    <Upload className="w-10 h-10 mx-auto text-gray-400 mb-2" />
+                    <Label htmlFor="resume-file" className="cursor-pointer font-semibold text-blue-600 dark:text-blue-400 block mb-1">
+                      Choose PDF file
+                    </Label>
+                    <p className="text-xs text-gray-505 dark:text-gray-500 mb-2">Only PDF files up to 5MB supported</p>
+                    
+                    <input
+                      id="resume-file"
+                      type="file"
+                      accept=".pdf"
+                      onChange={handleFileChange}
+                      className="hidden"
+                    />
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Skills</CardTitle>
-              <CardDescription>Your technical expertise</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Label htmlFor="skills">Technical Skills (comma-separated)</Label>
-              <Textarea
-                id="skills"
-                placeholder="e.g., Java, Python, React, MySQL, Git, AWS"
-                rows={3}
-              />
-            </CardContent>
-          </Card>
+                    {pdfFile && (
+                      <div className="mt-4 p-2 bg-blue-100/30 dark:bg-blue-900/10 rounded flex items-center justify-center gap-2 border border-blue-200/50">
+                        <FileText className="w-4 h-4 text-blue-600" />
+                        <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 truncate max-w-xs">
+                          {pdfFile.name}
+                        </span>
+                      </div>
+                    )}
+                  </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Projects</CardTitle>
-              <CardDescription>Showcase your work</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="project-title">Project Title</Label>
-                <Input id="project-title" placeholder="e.g., E-Commerce Website" />
-              </div>
-              <div>
-                <Label htmlFor="project-desc">Project Description</Label>
-                <Textarea
-                  id="project-desc"
-                  placeholder="Describe what you built, technologies used, and impact..."
-                  rows={4}
-                />
-              </div>
-              <Button variant="outline" className="w-full">
-                + Add Another Project
-              </Button>
-            </CardContent>
-          </Card>
+                  <Button
+                    onClick={handleAnalyzeResume}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                    disabled={analyzing || !pdfFile}
+                  >
+                    {analyzing ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Extracting & Analyzing with GPT...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-4 h-4 mr-2" />
+                        Analyze Resume
+                      </>
+                    )}
+                  </Button>
+                </CardContent>
+              </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Work Experience (Optional)</CardTitle>
-              <CardDescription>Internships or jobs</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="company">Company Name</Label>
-                <Input id="company" placeholder="Company or Organization" />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="role">Role</Label>
-                  <Input id="role" placeholder="e.g., Software Intern" />
+              {analysisResult && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in duration-350">
+                  <Card className="bg-white dark:bg-[#111]">
+                    <CardHeader>
+                      <CardTitle className="text-sm font-bold text-gray-500 uppercase tracking-wider">Suggestions</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      {analysisResult.suggestions?.map((item: string, i: number) => (
+                        <div key={i} className="flex items-start gap-2 text-sm bg-gray-50 dark:bg-[#1a1a1a] p-2 rounded">
+                          <Check className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                          <span className="text-gray-750 dark:text-gray-300">{item}</span>
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+
+                  <Card className="bg-white dark:bg-[#111]">
+                    <CardHeader>
+                      <CardTitle className="text-sm font-bold text-gray-500 uppercase tracking-wider">Formatting Improvements</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      {analysisResult.formattingImprovements?.map((item: string, i: number) => (
+                        <div key={i} className="flex items-start gap-2 text-sm bg-gray-50 dark:bg-[#1a1a1a] p-2 rounded">
+                          <AlertCircle className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" />
+                          <span className="text-gray-750 dark:text-gray-300">{item}</span>
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
                 </div>
-                <div>
-                  <Label htmlFor="duration">Duration</Label>
-                  <Input id="duration" placeholder="e.g., Jun 2025 - Aug 2025" />
-                </div>
-              </div>
-              <div>
-                <Label htmlFor="responsibilities">Key Responsibilities</Label>
-                <Textarea
-                  id="responsibilities"
-                  placeholder="What did you accomplish?"
-                  rows={3}
-                />
-              </div>
-            </CardContent>
-          </Card>
+              )}
+            </div>
 
-          <div className="flex gap-4">
-            <Button className="flex-1" onClick={handleAnalyze}>
-              <FileText className="w-4 h-4 mr-2" />
-              Analyze Resume
-            </Button>
-            <Button variant="outline" className="flex-1">
-              <Download className="w-4 h-4 mr-2" />
-              Download PDF
-            </Button>
+            <div className="space-y-4">
+              {analysisResult ? (
+                <Card className="border-2 border-blue-600 bg-white dark:bg-[#111] animate-in zoom-in-95 duration-300">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Star className="w-5 h-5 text-yellow-500 fill-yellow-500" />
+                      ATS Grade Result
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4 text-center">
+                    <div className="text-6xl font-bold text-blue-600 mb-1">{analysisResult.atsScore}%</div>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">ATS Score Compatibility</p>
+                    <Progress value={analysisResult.atsScore} className="h-3" />
+                    
+                    <div className="text-left border-t dark:border-gray-800 pt-4">
+                      <p className="font-semibold text-xs text-gray-500 mb-2">Missing Keywords Detected:</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {analysisResult.missingKeywords?.map((keyword: string, i: number) => (
+                          <Badge key={i} variant="outline" className="bg-red-50 dark:bg-red-950/20 text-red-700 dark:text-red-400 border-red-200">
+                            {keyword}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : (
+                <Card className="bg-white dark:bg-[#111]">
+                  <CardHeader>
+                    <CardTitle className="text-base">Why analyze?</CardTitle>
+                  </CardHeader>
+                  <CardContent className="text-sm space-y-3 text-gray-650 dark:text-gray-400">
+                    <p>✓ Ensure your PDF reads correctly on algorithmic screeners.</p>
+                    <p>✓ Retrieve missing skills or technical keywords tailored to CS/IT profiles.</p>
+                    <p>✓ Identify formatting layout errors that cause parsers to glitch.</p>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
           </div>
-        </div>
+        </TabsContent>
 
-        <div className="space-y-4">
-          {showScore && (
-            <Card className="border-2 border-blue-600">
+        {/* BUILDER TAB */}
+        <TabsContent value="builder" className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="md:col-span-2 space-y-4">
+            <Card className="bg-white dark:bg-[#111] border dark:border-gray-800">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Star className="w-5 h-5 text-yellow-500" />
-                  Resume Score
-                </CardTitle>
+                <CardTitle>Personal Information</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="text-center">
-                  <div className="text-5xl font-bold text-blue-600 mb-2">{resumeScore}%</div>
-                  <p className="text-sm text-gray-600">ATS Compatibility</p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="name">Full Name</Label>
+                    <Input id="name" placeholder="John Doe" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} />
+                  </div>
+                  <div>
+                    <Label htmlFor="email">Email</Label>
+                    <Input id="email" type="email" placeholder="john@example.com" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} />
+                  </div>
                 </div>
-                <Progress value={resumeScore} className="h-3" />
-                <div className="space-y-2">
-                  <p className="font-semibold text-sm">Improvement Checklist:</p>
-                  {improvements.map((item, i) => (
-                    <div key={i} className="flex items-center gap-2 text-sm">
-                      {item.done ? (
-                        <Check className="w-4 h-4 text-green-600" />
-                      ) : (
-                        <div className="w-4 h-4 border-2 border-gray-300 rounded" />
-                      )}
-                      <span className={item.done ? "text-gray-900" : "text-gray-600"}>
-                        {item.text}
-                      </span>
-                    </div>
-                  ))}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="phone">Phone</Label>
+                    <Input id="phone" placeholder="+91 99999 99999" value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} />
+                  </div>
+                  <div>
+                    <Label htmlFor="linkedin">LinkedIn</Label>
+                    <Input id="linkedin" placeholder="linkedin.com/in/john" value={formData.linkedin} onChange={(e) => setFormData({...formData, linkedin: e.target.value})} />
+                  </div>
                 </div>
               </CardContent>
             </Card>
-          )}
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Resume Templates</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <Button variant="outline" className="w-full justify-start">
-                <FileText className="w-4 h-4 mr-2" />
-                Professional Template
-              </Button>
-              <Button variant="outline" className="w-full justify-start">
-                <FileText className="w-4 h-4 mr-2" />
-                Modern Template
-              </Button>
-              <Button variant="outline" className="w-full justify-start">
-                <FileText className="w-4 h-4 mr-2" />
-                Technical Template
-              </Button>
-            </CardContent>
-          </Card>
+            <Card className="bg-white dark:bg-[#111] border dark:border-gray-800">
+              <CardHeader>
+                <CardTitle>Education</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label htmlFor="degree">Degree</Label>
+                  <Input id="degree" placeholder="MCA, B.Tech (CS)" value={formData.degree} onChange={(e) => setFormData({...formData, degree: e.target.value})} />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="college">College/University</Label>
+                    <Input id="college" placeholder="IIT Delhi" value={formData.college} onChange={(e) => setFormData({...formData, college: e.target.value})} />
+                  </div>
+                  <div>
+                    <Label htmlFor="year">Graduation Year</Label>
+                    <Input id="year" placeholder="2026" value={formData.year} onChange={(e) => setFormData({...formData, year: e.target.value})} />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Tips</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 text-sm">
-              <div className="flex items-start gap-2">
-                <Badge variant="default" className="mt-0.5">1</Badge>
-                <p>Use action verbs like "Developed", "Implemented", "Designed"</p>
-              </div>
-              <div className="flex items-start gap-2">
-                <Badge variant="default" className="mt-0.5">2</Badge>
-                <p>Quantify achievements with numbers and metrics</p>
-              </div>
-              <div className="flex items-start gap-2">
-                <Badge variant="default" className="mt-0.5">3</Badge>
-                <p>Keep formatting simple for ATS systems</p>
-              </div>
-              <div className="flex items-start gap-2">
-                <Badge variant="default" className="mt-0.5">4</Badge>
-                <p>Include relevant keywords from job descriptions</p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+            <Card className="bg-white dark:bg-[#111] border dark:border-gray-800">
+              <CardHeader>
+                <CardTitle>Skills & Projects</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label htmlFor="skills">Technical Skills (comma-separated)</Label>
+                  <Textarea id="skills" placeholder="Java, React, SQL..." rows={2} value={formData.skills} onChange={(e) => setFormData({...formData, skills: e.target.value})} />
+                </div>
+                <div className="border-t dark:border-gray-800 pt-4">
+                  <Label htmlFor="proj-title">Project Title</Label>
+                  <Input id="proj-title" placeholder="FuturePath AI" className="mb-2" value={formData.projectTitle} onChange={(e) => setFormData({...formData, projectTitle: e.target.value})} />
+                  <Label htmlFor="proj-desc">Project Description</Label>
+                  <Textarea id="proj-desc" placeholder="Developed career planner..." rows={3} value={formData.projectDesc} onChange={(e) => setFormData({...formData, projectDesc: e.target.value})} />
+                </div>
+              </CardContent>
+            </Card>
+
+            <div className="flex gap-4">
+              <Button className="flex-1" onClick={handleDownloadMockPDF}>
+                Generate PDF Resume
+              </Button>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <Card className="bg-white dark:bg-[#111]">
+              <CardHeader>
+                <CardTitle className="text-base">Builder tips</CardTitle>
+              </CardHeader>
+              <CardContent className="text-xs space-y-2 leading-relaxed text-gray-500">
+                <p>• Avoid graphics, progress bars or visual ratings in skills. Algorithms read them as empty.</p>
+                <p>• Use active, professional verbs like "Constructed", "Optimized", "Spearheaded".</p>
+                <p>• Save file names clearly (e.g. John_Doe_Resume.pdf).</p>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
