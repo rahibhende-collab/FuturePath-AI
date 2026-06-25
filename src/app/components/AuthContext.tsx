@@ -123,7 +123,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setToken(null);
     setUser(null);
     toast.info("Logged out successfully");
-    navigate("/login");
+    navigate("/");
   };
 
   const updateProfile = async (profileData: any): Promise<boolean> => {
